@@ -105,6 +105,7 @@ use core::result::Result as CoreResult;
 use core::slice::from_raw_parts;
 use core::slice::from_raw_parts_mut;
 use core::sync::atomic::{
+    compiler_fence,
     AtomicBool, AtomicUsize,
     Ordering::{self, Acquire, Relaxed, Release},
 };
@@ -650,6 +651,9 @@ impl AtomicBoolExt for AtomicBool {
     fn swap(&self, val: bool, _order: Ordering) -> bool {
         cortex_m::interrupt::free(|_| {
             let prev = self.load(Ordering::Relaxed);
+
+            compiler_fence(Ordering::SeqCst);
+
             self.store(val, Ordering::Relaxed);
 
             prev
@@ -659,6 +663,8 @@ impl AtomicBoolExt for AtomicBool {
     fn compare_and_swap(&self, current: bool, new: bool, _order: Ordering) -> bool {
         cortex_m::interrupt::free(|_| {
             let prev = self.load(Ordering::Relaxed);
+
+            compiler_fence(Ordering::SeqCst);
 
             if prev == current {
                 self.store(new, Ordering::Relaxed);
@@ -679,6 +685,9 @@ impl AtomicUsizeExt for AtomicUsize {
     fn fetch_add(&self, val: usize, _order: Ordering) -> usize {
         cortex_m::interrupt::free(|_| {
             let prev = self.load(Ordering::Relaxed);
+
+            compiler_fence(Ordering::SeqCst);
+
             self.store(prev + val, Ordering::Relaxed);
 
             prev
@@ -688,6 +697,9 @@ impl AtomicUsizeExt for AtomicUsize {
     fn fetch_sub(&self, val: usize, _order: Ordering) -> usize {
         cortex_m::interrupt::free(|_| {
             let prev = self.load(Ordering::Relaxed);
+
+            compiler_fence(Ordering::SeqCst);
+
             self.store(prev - val, Ordering::Relaxed);
 
             prev
